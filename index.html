@@ -122,7 +122,44 @@
         };
 
         const { useState, useEffect } = React;
+const Watermark = ({ text }) => {
+            // 把 email (C73449@agent.system) 切割，只顯示 @ 前面的帳號 (C73449)
+            const displayAccount = text ? text.split('@')[0] : '';
+            
+            return (
+                <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden" style={{ opacity: 0.08 }}>
+                    <svg width="100%" height="100%">
+                        <defs>
+                            <pattern id="watermark-pattern" x="0" y="0" width="300" height="300" patternUnits="userSpaceOnUse">
+                                <text 
+                                    x="150" 
+                                    y="150" 
+                                    fontSize="20" 
+                                    fill="#000" 
+                                    transform="rotate(-30, 150, 150)" 
+                                    textAnchor="middle" 
+                                    dominantBaseline="middle" 
+                                    fontWeight="bold"
+                                    fontFamily="sans-serif"
+                                >
+                                    {displayAccount}
+                                </text>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#watermark-pattern)" />
+                    </svg>
+                </div>
+            );
+        };
 
+        // ---------------------------------------------------------
+        // 新增功能：統一的頁尾版權宣告
+        // ---------------------------------------------------------
+        const Footer = () => (
+            <footer className="text-center py-8 text-slate-400 text-xs md:text-sm mt-auto border-t border-slate-200/50 bg-slate-50/50 backdrop-blur-sm">
+                <p>Copyright © 2025 李培智. All Rights Reserved.</p>
+            </footer>
+        );
         // ---------------------------------------------------------
         // 3. Login Component (登入畫面)
         // ---------------------------------------------------------
@@ -202,68 +239,76 @@
             const handleLogout = () => auth.signOut();
 
             return (
-                <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-                    <div className="max-w-5xl mx-auto">
-                        <div className="flex justify-between items-center mb-8">
-                            <h1 className="text-3xl font-bold text-slate-800">我的委託分析庫</h1>
-                            <div className="flex gap-4">
-                                <button onClick={onCreateNew} className="bg-amber-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-amber-600 flex items-center shadow-md">
-                                    <IconBrain className="w-5 h-5 mr-2"/> 新增分析
-                                </button>
-                                <button onClick={handleLogout} className="bg-white text-slate-600 px-4 py-2 rounded-lg font-bold border border-slate-200 hover:bg-slate-100 flex items-center">
-                                    <IconLogOut className="w-5 h-5 mr-2"/> 登出
-                                </button>
-                            </div>
-                        </div>
+                <div className="min-h-screen bg-slate-50 flex flex-col relative">
+                    {/* 1. 插入浮水印 */}
+                    <Watermark text={user.email} />
 
-                        {loading ? (
-                            <div className="text-center py-20 text-slate-500">載入中...</div>
-                        ) : records.length === 0 ? (
-                            <div className="bg-white rounded-2xl p-10 text-center shadow-sm border border-slate-100">
-                                <p className="text-slate-500 mb-4">目前還沒有分析紀錄</p>
-                                <button onClick={onCreateNew} className="text-amber-500 font-bold hover:underline">立即建立第一筆分析</button>
-                            </div>
-                        ) : (
-                            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-slate-50 border-b border-slate-200">
-                                            <tr>
-                                                <th className="p-4 font-bold text-slate-600">日期</th>
-                                                <th className="p-4 font-bold text-slate-600">委託名稱</th>
-                                                <th className="p-4 font-bold text-slate-600">編號</th>
-                                                <th className="p-4 font-bold text-slate-600">評分</th>
-                                                <th className="p-4 font-bold text-slate-600 text-right">操作</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                            {records.map(rec => (
-                                                <tr key={rec.id} className="hover:bg-slate-50 transition">
-                                                    <td className="p-4 text-sm text-slate-500">{rec.createdAt?.toDate().toLocaleDateString()}</td>
-                                                    <td className="p-4 font-bold text-slate-800">{rec.delegationName}</td>
-                                                    <td className="p-4 text-slate-600">{rec.delegationId}</td>
-                                                    <td className="p-4">
-                                                        <span className={`font-bold ${rec.apiResult.score >= 80 ? 'text-amber-500' : rec.apiResult.score >= 60 ? 'text-blue-600' : 'text-slate-500'}`}>
-                                                            {rec.apiResult.score}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-4 text-right">
-                                                        <button onClick={() => onViewReport(rec)} className="text-indigo-600 hover:text-indigo-800 font-bold text-sm">
-                                                            查看報告
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                    <div className="p-4 md:p-8 flex-grow relative z-10">
+                        <div className="max-w-5xl mx-auto">
+                             {/* ... (這裡原本的內容都不用動) ... */}
+                             <div className="flex justify-between items-center mb-8">
+                                <h1 className="text-3xl font-bold text-slate-800">我的委託分析庫</h1>
+                                <div className="flex gap-4">
+                                    <button onClick={onCreateNew} className="bg-amber-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-amber-600 flex items-center shadow-md">
+                                        <IconBrain className="w-5 h-5 mr-2"/> 新增分析
+                                    </button>
+                                    <button onClick={() => auth.signOut()} className="bg-white text-slate-600 px-4 py-2 rounded-lg font-bold border border-slate-200 hover:bg-slate-100 flex items-center">
+                                        <IconLogOut className="w-5 h-5 mr-2"/> 登出
+                                    </button>
                                 </div>
                             </div>
-                        )}
+
+                            {loading ? (
+                                <div className="text-center py-20 text-slate-500">載入中...</div>
+                            ) : records.length === 0 ? (
+                                <div className="bg-white rounded-2xl p-10 text-center shadow-sm border border-slate-100">
+                                    <p className="text-slate-500 mb-4">目前還沒有分析紀錄</p>
+                                    <button onClick={onCreateNew} className="text-amber-500 font-bold hover:underline">立即建立第一筆分析</button>
+                                </div>
+                            ) : (
+                                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead className="bg-slate-50 border-b border-slate-200">
+                                                <tr>
+                                                    <th className="p-4 font-bold text-slate-600">日期</th>
+                                                    <th className="p-4 font-bold text-slate-600">委託名稱</th>
+                                                    <th className="p-4 font-bold text-slate-600">編號</th>
+                                                    <th className="p-4 font-bold text-slate-600">評分</th>
+                                                    <th className="p-4 font-bold text-slate-600 text-right">操作</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {records.map(rec => (
+                                                    <tr key={rec.id} className="hover:bg-slate-50 transition">
+                                                        <td className="p-4 text-sm text-slate-500">{rec.createdAt?.toDate().toLocaleDateString()}</td>
+                                                        <td className="p-4 font-bold text-slate-800">{rec.delegationName}</td>
+                                                        <td className="p-4 text-slate-600">{rec.delegationId}</td>
+                                                        <td className="p-4">
+                                                            <span className={`font-bold ${rec.apiResult.score >= 80 ? 'text-amber-500' : rec.apiResult.score >= 60 ? 'text-blue-600' : 'text-slate-500'}`}>
+                                                                {rec.apiResult.score}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-4 text-right">
+                                                            <button onClick={() => onViewReport(rec)} className="text-indigo-600 hover:text-indigo-800 font-bold text-sm">
+                                                                查看報告
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
+                    
+                    {/* 2. 插入頁尾 */}
+                    <Footer />
                 </div>
             );
         }
-
         // ---------------------------------------------------------
         // 5. Main Logic Component (原有的分析邏輯 + 存檔功能)
         // ---------------------------------------------------------
@@ -370,6 +415,9 @@
           }
 
           return (
+              <div className="min-h-screen bg-slate-50 flex flex-col relative">
+                    {/* 1. 插入浮水印 */}
+                    <Watermark text={user.email} />
             <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-800">
               <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
                 
@@ -389,76 +437,74 @@
                     
                     {/* 基本資料輸入區 (只在第一步顯示) */}
                     {currentStep === 0 && (
-                        <div className="mb-8 bg-slate-50 p-6 rounded-xl border border-slate-200">
-                            <h3 className="text-lg font-bold text-slate-700 mb-4 flex items-center"><IconList className="w-5 h-5 mr-2"/> 基本資料 (選填)</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 mb-1">委託名稱 *</label>
-                                    <input type="text" name="delegationName" value={meta.delegationName} onChange={handleMetaChange} placeholder="例：XX社區 王大哥" className="w-full p-2 border rounded focus:border-amber-500 outline-none" />
+                                        <div className="mb-8 bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                            <h3 className="text-lg font-bold text-slate-700 mb-4 flex items-center"><IconList className="w-5 h-5 mr-2"/> 基本資料 (選填)</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 mb-1">委託名稱 *</label>
+                                                    <input type="text" name="delegationName" value={meta.delegationName} onChange={handleMetaChange} placeholder="例：XX社區 王大哥" className="w-full p-2 border rounded focus:border-amber-500 outline-none" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 mb-1">委託編號</label>
+                                                    <input type="text" name="delegationId" value={meta.delegationId} onChange={handleMetaChange} placeholder="例：AA12345678" className="w-full p-2 border rounded focus:border-amber-500 outline-none" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 mb-1">物件連結</label>
+                                                    <input type="text" name="delegationLink" value={meta.delegationLink} onChange={handleMetaChange} placeholder="http://..." className="w-full p-2 border rounded focus:border-amber-500 outline-none" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-between mb-2 px-1">
+                                      <span className="text-xs font-bold text-slate-400">STEP {currentStep + 1}</span>
+                                      <span className="text-xs font-bold text-slate-400">TOTAL {dimensionKeys.length}</span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 h-2 rounded-full mb-8 overflow-hidden">
+                                      <div className="bg-amber-500 h-full transition-all duration-500 ease-out" style={{ width: `${((currentStep + 1) / dimensionKeys.length) * 100}%` }}></div>
+                                    </div>
+
+                                    <div className="mb-10 min-h-[300px]">
+                                      <div className="flex flex-col md:flex-row md:items-center mb-6 gap-4">
+                                        <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm flex-shrink-0">
+                                          {currentDimension.icon}
+                                        </div>
+                                        <div>
+                                          <h2 className="text-2xl font-bold text-slate-800">{currentDimension.title}</h2>
+                                          <p className="text-slate-500 mt-1">{currentDimension.desc}</p>
+                                        </div>
+                                      </div>
+
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {currentDimension.options.map((option) => (
+                                          <button
+                                            key={option.id}
+                                            onClick={() => handleSelect(option.id)}
+                                            className={`relative p-5 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md ${
+                                              selections[currentDimensionKey] === option.id ? 'border-amber-500 bg-amber-50 shadow-md' : 'border-slate-100 bg-white hover:border-amber-200'
+                                            }`}
+                                          >
+                                            <div className="flex justify-between items-center mb-2">
+                                              <span className={`font-bold text-lg ${selections[currentDimensionKey] === option.id ? 'text-amber-700' : 'text-slate-700'}`}>{option.label}</span>
+                                              {selections[currentDimensionKey] === option.id && <IconCheckCircle className="w-5 h-5 text-amber-500" />}
+                                            </div>
+                                            <p className="text-slate-500 text-sm leading-relaxed">{option.desc}</p>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    <div className="flex justify-between pt-6 border-t border-slate-100">
+                                      <button onClick={handlePrev} disabled={currentStep === 0} className={`flex items-center px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${currentStep === 0 ? 'opacity-0 cursor-default' : 'text-slate-500 hover:bg-slate-100'}`}>
+                                        <IconChevronLeft className="w-4 h-4 mr-1" /> 上一步
+                                      </button>
+                                      <button onClick={handleNext} disabled={!selections[currentDimensionKey]} className={`flex items-center px-8 py-3 rounded-lg font-bold text-base shadow-lg transition-all transform ${!selections[currentDimensionKey] ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' : 'bg-amber-500 text-white hover:bg-amber-600 hover:-translate-y-0.5 shadow-amber-500/30'}`}>
+                                        {currentStep === dimensionKeys.length - 1 ? '開始運算分析' : '下一步'} <IconChevronRight className="ml-1 w-5 h-5" />
+                                      </button>
+                                    </div>
+
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 mb-1">委託編號</label>
-                                    <input type="text" name="delegationId" value={meta.delegationId} onChange={handleMetaChange} placeholder="例：AA12345678" className="w-full p-2 border rounded focus:border-amber-500 outline-none" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 mb-1">物件連結</label>
-                                    <input type="text" name="delegationLink" value={meta.delegationLink} onChange={handleMetaChange} placeholder="http://..." className="w-full p-2 border rounded focus:border-amber-500 outline-none" />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Progress Bar */}
-                    <div className="flex justify-between mb-2 px-1">
-                      <span className="text-xs font-bold text-slate-400">STEP {currentStep + 1}</span>
-                      <span className="text-xs font-bold text-slate-400">TOTAL {dimensionKeys.length}</span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full mb-8 overflow-hidden">
-                      <div className="bg-amber-500 h-full transition-all duration-500 ease-out" style={{ width: `${((currentStep + 1) / dimensionKeys.length) * 100}%` }}></div>
-                    </div>
-
-                    {/* Question Section */}
-                    <div className="mb-10 min-h-[300px]">
-                      <div className="flex flex-col md:flex-row md:items-center mb-6 gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm flex-shrink-0">
-                          {currentDimension.icon}
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-bold text-slate-800">{currentDimension.title}</h2>
-                          <p className="text-slate-500 mt-1">{currentDimension.desc}</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {currentDimension.options.map((option) => (
-                          <button
-                            key={option.id}
-                            onClick={() => handleSelect(option.id)}
-                            className={`relative p-5 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md ${
-                              selections[currentDimensionKey] === option.id ? 'border-amber-500 bg-amber-50 shadow-md' : 'border-slate-100 bg-white hover:border-amber-200'
-                            }`}
-                          >
-                            <div className="flex justify-between items-center mb-2">
-                              <span className={`font-bold text-lg ${selections[currentDimensionKey] === option.id ? 'text-amber-700' : 'text-slate-700'}`}>{option.label}</span>
-                              {selections[currentDimensionKey] === option.id && <IconCheckCircle className="w-5 h-5 text-amber-500" />}
-                            </div>
-                            <p className="text-slate-500 text-sm leading-relaxed">{option.desc}</p>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Navigation */}
-                    <div className="flex justify-between pt-6 border-t border-slate-100">
-                      <button onClick={handlePrev} disabled={currentStep === 0} className={`flex items-center px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${currentStep === 0 ? 'opacity-0 cursor-default' : 'text-slate-500 hover:bg-slate-100'}`}>
-                        <IconChevronLeft className="w-4 h-4 mr-1" /> 上一步
-                      </button>
-                      <button onClick={handleNext} disabled={!selections[currentDimensionKey]} className={`flex items-center px-8 py-3 rounded-lg font-bold text-base shadow-lg transition-all transform ${!selections[currentDimensionKey] ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' : 'bg-amber-500 text-white hover:bg-amber-600 hover:-translate-y-0.5 shadow-amber-500/30'}`}>
-                        {currentStep === dimensionKeys.length - 1 ? '開始運算分析' : '下一步'} <IconChevronRight className="ml-1 w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
+                             ) : (
                   <div className="animate-fade-in">
                     {/* Result Top Bar */}
                     <div className="bg-slate-50 border-b border-slate-200 p-4">
@@ -526,15 +572,19 @@
                         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all">
                           <div className="bg-slate-800 p-4 flex items-center text-white"><IconUsers className="w-5 h-5 mr-3 text-blue-400" /> <h3 className="font-bold text-lg">委託局勢與團隊合作策略</h3></div>
                           <div className="p-6 md:p-8"><div className="whitespace-pre-wrap text-slate-700 leading-loose">{apiResult.analysis.teamStrategy}</div></div>
-                        </div>
-                      </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                </div>
+                             )}
+                         </div>
                     </div>
-                  </div>
-                )}
-              </div>
-              <style>{`@keyframes fade-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } } .animate-fade-in { animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }`}</style>
-            </div>
-          );
+
+                    {/* 2. 插入頁尾 */}
+                    <Footer />
+                  <style>{`@keyframes fade-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } } .animate-fade-in { animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }`}</style>
+                </div>
+             );
         }
 
         // ---------------------------------------------------------
@@ -580,6 +630,7 @@
 </body>
 
 </html>
+
 
 
 
