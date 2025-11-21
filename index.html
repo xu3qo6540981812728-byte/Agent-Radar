@@ -14,8 +14,61 @@
     <style>
         body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
         .whitespace-pre-wrap { white-space: pre-wrap; }
+        
+   /* 禁止文字選取，保護內容不被複製 */
+        body { 
+            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; 
+            -webkit-user-select: none; /* Chrome/Safari */
+            -moz-user-select: none;    /* Firefox */
+            -ms-user-select: none;     /* IE10+ */
+            user-select: none;         /* Standard */
+        }
+        /* 允許輸入框可以選取，不然無法輸入 */
+        input, textarea {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        .whitespace-pre-wrap { white-space: pre-wrap; }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } } 
+        .animate-fade-in { animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     </style>
 </head>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. 禁止右鍵選單
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                // alert("系統保護中，已停用右鍵功能。"); // 想要跳出警告可以把這行註解拿掉
+            });
+
+            // 2. 禁止鍵盤快捷鍵 (F12, Ctrl+Shift+I, Ctrl+C, Ctrl+U)
+            document.addEventListener('keydown', function(e) {
+                // 檢查是否按下 Ctrl (Mac是Command)
+                const isCmdOrCtrl = (navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey);
+
+                // 禁止 F12
+                if (e.key === 'F12') {
+                    e.preventDefault();
+                }
+                
+                // 禁止 Ctrl+Shift+I (開發者工具)
+                if (isCmdOrCtrl && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
+                    e.preventDefault();
+                }
+
+                // 禁止 Ctrl+U (檢視原始碼)
+                if (isCmdOrCtrl && (e.key === 'U' || e.key === 'u')) {
+                    e.preventDefault();
+                }
+                
+                // 禁止 Ctrl+C (複製) - 雖然CSS已鎖選取，這層是雙重保險
+                if (isCmdOrCtrl && (e.key === 'C' || e.key === 'c')) {
+                    e.preventDefault();
+                    // alert("內容受到版權保護，禁止複製。");
+                }
+            });
+        });
+    </script>
 <body>
     <div id="root"></div>
 
@@ -57,7 +110,7 @@
         const IconSave = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>);
         const IconList = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>);
         const IconLogOut = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>);
-
+const IconTrash = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>);
         // DIMENSIONS 資料維持不變
         const DIMENSIONS = {
           personality: { title: "維度一：性格特質", icon: <IconUser className="w-6 h-6" />, desc: "決定溝通頻率、語氣與心理攻防的切入點", options: [ { id: 'tiger', label: '老虎型 (掌控型)', desc: '語速快、聲音大、常打斷、喜下指令、只問結果' }, { id: 'owl', label: '貓頭鷹型 (分析型)', desc: '重細節、愛筆記、比對資料、重法規、情感冷靜' }, { id: 'peacock', label: '孔雀型 (社交型)', desc: '熱情愛聊、肢體豐富、重面子、喜聽好話、情緒化' }, { id: 'koala', label: '無尾熊型 (和平型)', desc: '慢條斯里、猶豫不決、常問家人、怕衝突、配合度高' } ] },
@@ -235,17 +288,31 @@ const Watermark = ({ text }) => {
                 return () => unsubscribe();
             }, [user]);
 
-            const handleLogout = () => auth.signOut();
+            // ★★★ 新增刪除功能 ★★★
+            const handleDelete = async (docId, name) => {
+                // 1. 跳出確認視窗 (防呆)
+                const isConfirmed = confirm(`警告：您確定要永久刪除「${name}」這筆分析嗎？\n此動作無法復原！`);
+                
+                if (isConfirmed) {
+                    try {
+                        // 2. 執行 Firebase 刪除指令
+                        await db.collection('analyses').doc(docId).delete();
+                        alert("刪除成功！");
+                        // 不需要手動更新 records，因為上面的 onSnapshot 會自動偵測並更新畫面
+                    } catch (error) {
+                        console.error("刪除失敗:", error);
+                        alert("刪除失敗，請稍後再試。");
+                    }
+                }
+            };
 
             return (
                 <div className="min-h-screen bg-slate-50 flex flex-col relative">
-                    {/* 1. 插入浮水印 */}
                     <Watermark text={user.email} />
 
                     <div className="p-4 md:p-8 flex-grow relative z-10">
                         <div className="max-w-5xl mx-auto">
-                             {/* ... (這裡原本的內容都不用動) ... */}
-                             <div className="flex justify-between items-center mb-8">
+                            <div className="flex justify-between items-center mb-8">
                                 <h1 className="text-3xl font-bold text-slate-800">我的委託分析庫</h1>
                                 <div className="flex gap-4">
                                     <button onClick={onCreateNew} className="bg-amber-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-amber-600 flex items-center shadow-md">
@@ -275,11 +342,13 @@ const Watermark = ({ text }) => {
                                                     <th className="p-4 font-bold text-slate-600">編號</th>
                                                     <th className="p-4 font-bold text-slate-600">評分</th>
                                                     <th className="p-4 font-bold text-slate-600 text-right">操作</th>
+                                                    {/* 新增一欄給刪除按鈕 */}
+                                                    <th className="p-4 w-10"></th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
                                                 {records.map(rec => (
-                                                    <tr key={rec.id} className="hover:bg-slate-50 transition">
+                                                    <tr key={rec.id} className="hover:bg-slate-50 transition group">
                                                         <td className="p-4 text-sm text-slate-500">{rec.createdAt?.toDate().toLocaleDateString()}</td>
                                                         <td className="p-4 font-bold text-slate-800">{rec.delegationName}</td>
                                                         <td className="p-4 text-slate-600">{rec.delegationId}</td>
@@ -293,6 +362,16 @@ const Watermark = ({ text }) => {
                                                                 查看報告
                                                             </button>
                                                         </td>
+                                                        {/* ★★★ 刪除按鈕 ★★★ */}
+                                                        <td className="p-4 text-right">
+                                                            <button 
+                                                                onClick={() => handleDelete(rec.id, rec.delegationName)} 
+                                                                className="text-red-300 hover:text-red-600 transition p-2 rounded-full hover:bg-red-50"
+                                                                title="刪除此筆資料"
+                                                            >
+                                                                <IconTrash className="w-4 h-4" />
+                                                            </button>
+                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -303,7 +382,6 @@ const Watermark = ({ text }) => {
                         </div>
                     </div>
                     
-                    {/* 2. 插入頁尾 */}
                     <Footer />
                 </div>
             );
@@ -629,6 +707,7 @@ const Watermark = ({ text }) => {
 </body>
 
 </html>
+
 
 
 
