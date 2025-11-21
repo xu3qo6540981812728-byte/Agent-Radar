@@ -34,16 +34,28 @@
         .animate-fade-in { animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     </style>
 </head>
-    <script>
+   <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. 禁止右鍵選單
+            // 檢查是否為輸入框的函式
+            const isInput = (target) => {
+                return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+            };
+
+            // 1. 禁止右鍵選單 (但在輸入框內允許，這樣才能右鍵貼上)
             document.addEventListener('contextmenu', function(e) {
+                if (isInput(e.target)) {
+                    return; // 如果是輸入框，就放行，不攔截
+                }
                 e.preventDefault();
-                // alert("系統保護中，已停用右鍵功能。"); // 想要跳出警告可以把這行註解拿掉
             });
 
-            // 2. 禁止鍵盤快捷鍵 (F12, Ctrl+Shift+I, Ctrl+C, Ctrl+U)
+            // 2. 禁止鍵盤快捷鍵 (但在輸入框內允許，這樣才能 Ctrl+C / Ctrl+V)
             document.addEventListener('keydown', function(e) {
+                // 如果游標在輸入框內，完全不攔截任何按鍵，讓使用者可以正常複製貼上修圖
+                if (isInput(e.target)) {
+                    return; 
+                }
+
                 // 檢查是否按下 Ctrl (Mac是Command)
                 const isCmdOrCtrl = (navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey);
 
@@ -62,10 +74,9 @@
                     e.preventDefault();
                 }
                 
-                // 禁止 Ctrl+C (複製) - 雖然CSS已鎖選取，這層是雙重保險
+                // 禁止 Ctrl+C (複製) - 只在非輸入框時禁止
                 if (isCmdOrCtrl && (e.key === 'C' || e.key === 'c')) {
                     e.preventDefault();
-                    // alert("內容受到版權保護，禁止複製。");
                 }
             });
         });
@@ -708,6 +719,7 @@ const Watermark = ({ text }) => {
 </body>
 
 </html>
+
 
 
 
