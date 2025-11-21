@@ -123,7 +123,7 @@
 
         const { useState, useEffect } = React;
 const Watermark = ({ text }) => {
-            // 把 email (C73449@agent.system) 切割，只顯示 @ 前面的帳號 (C73449)
+           
             const displayAccount = text ? text.split('@')[0] : '';
             
             return (
@@ -170,8 +170,7 @@ const Watermark = ({ text }) => {
 
             const handleLogin = async (e) => {
                 e.preventDefault();
-                // 技巧：自動幫帳號加上假的 Email 後綴，騙過 Firebase
-                // 這樣你在輸入時只要打 C73449 即可
+                
                 const emailToUse = username.trim() + "@agent.system"; 
 
                 try {
@@ -189,13 +188,13 @@ const Watermark = ({ text }) => {
                         <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">房仲開發權威系統</h2>
                         <form onSubmit={handleLogin} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-bold text-slate-700">帳號 (員工編號)</label>
+                                <label className="block text-sm font-bold text-slate-700">帳號</label>
                                 <input 
                                     type="text" 
                                     required 
                                     value={username} 
                                     onChange={(e) => setUsername(e.target.value.toUpperCase())} // 自動轉大寫，避免大小寫輸入錯誤
-                                    placeholder="例如：C73449"
+                                    placeholder="員工編號"
                                     className="mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 uppercase" 
                                 />
                             </div>
@@ -442,7 +441,7 @@ const Watermark = ({ text }) => {
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                 <div>
                                                     <label className="block text-xs font-bold text-slate-500 mb-1">委託名稱 *</label>
-                                                    <input type="text" name="delegationName" value={meta.delegationName} onChange={handleMetaChange} placeholder="例：XX社區 王大哥" className="w-full p-2 border rounded focus:border-amber-500 outline-none" />
+                                                    <input type="text" name="delegationName" value={meta.delegationName} onChange={handleMetaChange} placeholder="複製後台案名" className="w-full p-2 border rounded focus:border-amber-500 outline-none" />
                                                 </div>
                                                 <div>
                                                     <label className="block text-xs font-bold text-slate-500 mb-1">委託編號</label>
@@ -630,6 +629,7 @@ const Watermark = ({ text }) => {
 </body>
 
 </html>
+
 
 
 
