@@ -14,11 +14,14 @@ exports.handler = async function(event, context) {
     
     const WEIGHTS = {
       personality: { tiger: 5, owl: 4, peacock: 4, koala: 5 },
-      motivation: { change: 20, cash: 25, asset: 10, test: 0 },
+      // [調整] 動機加重：屋主想賣才是真的，缺錢權重拉高到 30
+      motivation: { change: 25, cash: 30, asset: 10, test: 0 },
       ownerType: { normal: 10, investor: 5 },
       condition: { perfect: 15, needsWork: 12, complex: 5, flaw: 0 },
-      price: { urgent: 25, market: 15, high: 5, challenge: 0 },
-      contract: { exclusive: 20, general: 5 }
+      // [調整] 價格加重：價格治百病，權重拉高到 30
+      price: { urgent: 30, market: 20, high: 5, challenge: 0 },
+      // [調整] 委託調降：專任雖然好，但不是絕對，降至 10
+      contract: { exclusive: 10, general: 2 }
     };
 
     const RADAR_VALUES = {
@@ -139,4 +142,5 @@ exports.handler = async function(event, context) {
     return { statusCode: 500, body: error.toString() };
   }
 };
+
 
