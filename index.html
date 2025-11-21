@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房仲開發權威系統 - 五維分析</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+        .whitespace-pre-wrap { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // SVG Components (保持不變，這是 UI 顯示用)
+        const IconUser = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>);
+        const IconActivity = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>);
+        const IconHome = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>);
+        const IconDollarSign = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>);
+        const IconUsers = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 5.74"/></svg>);
+        const IconBrain = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 5a3 3 0 1 0-7.75 2h-.1A2 2 0 0 0 2 9.25v.1A3 3 0 1 0 7 15h.1A2 2 0 0 0 9.25 18H9.4A3 3 0 1 0 15 22.9V23H15A3 3 0 1 0 22 18.25v-.1A3 3 0 1 0 17 12h-.1A2 2 0 0 0 14.75 9H14.6A3 3 0 1 0 9 4.1V4H9A3 3 0 1 0 4.09 9.38"/><path d="M12 15v5"/><path d="M15 17.5l-3 3.5"/><path d="M9 17.5l3 3.5"/></svg>);
+        const IconRefreshCcw = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 8.4V2h-6.4M2 15.6V22h6.4"/><path d="M20 10c0 4.4-3.6 8-8 8s-8-3.6-8-8c0-2.9 1.5-5.6 4-7"/><path d="M13 2H8.4A10 10 0 0 0 3.7 18.2"/><path d="M11 22h4.6A10 10 0 0 0 20.3 5.8"/></svg>);
+        const IconChevronRight = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>);
+        const IconChevronLeft = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6"/></svg>);
+        const IconCheckCircle = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>);
+        const IconTarget = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>);
+
+        // --- DIMENSIONS 只保留結構與選項，敏感權重移除 ---
+        const DIMENSIONS = {
+          personality: {
+            title: "維度一：性格特質",
+            icon: <IconUser className="w-6 h-6" />,
+            desc: "決定溝通頻率、語氣與心理攻防的切入點",
+            options: [
+              { id: 'tiger', label: '老虎型 (掌控型)', desc: '語速快、聲音大、常打斷、喜下指令、只問結果' },
+              { id: 'owl', label: '貓頭鷹型 (分析型)', desc: '重細節、愛筆記、比對資料、重法規、情感冷靜' },
+              { id: 'peacock', label: '孔雀型 (社交型)', desc: '熱情愛聊、肢體豐富、重面子、喜聽好話、情緒化' },
+              { id: 'koala', label: '無尾熊型 (和平型)', desc: '慢條斯里、猶豫不決、常問家人、怕衝突、配合度高' }
+            ]
+          },
+          motivation: {
+            title: "維度二：售屋動機",
+            icon: <IconActivity className="w-6 h-6" />,
+            desc: "判斷急迫性與痛點，決定談判籌碼的大小",
+            options: [
+              { id: 'change', label: '換屋需求型', desc: '換大換小或工作調動，有明確時間表與剛性需求' },
+              { id: 'cash', label: '急需資金型', desc: '解決債務或周轉，急迫性最高，痛點最明顯' },
+              { id: 'asset', label: '閒置去化型', desc: '繼承或多餘資產，無急迫壓力，理性配置考量' },
+              { id: 'test', label: '試探水溫型', desc: '單純賣賣看，心態隨緣，價格不漂亮就不賣' }
+            ]
+          },
+          ownerType: {
+            title: "維度三：屋主種類",
+            icon: <IconUsers className="w-6 h-6" />,
+            desc: "判斷決策模式是偏向「情感價值」還是「數據邏輯」",
+            options: [
+              { id: 'normal', label: '一般客', desc: '普通民眾，情感連結深，易受「稟賦效應」影響' },
+              { id: 'investor', label: '投資客', desc: '經驗豐富，看重投報率與成本，決策理性' }
+            ]
+          },
+          condition: {
+            title: "維度四：房屋條件",
+            icon: <IconHome className="w-6 h-6" />,
+            desc: "判斷產品本身的優劣勢與市場定位",
+            options: [
+              { id: 'perfect', label: '完美屋況 (A案)', desc: '無需整理即可入住，賣相極佳，市場接受度高' },
+              { id: 'needsWork', label: '需整理 (B案)', desc: '需小修補或粉刷，結構無虞，需靠軟裝或想像力銷售' },
+              { id: 'flaw', label: '瑕疵較多 (C案)', desc: '路沖、凶宅或屋況極差，客群受限，需特殊通路' },
+              { id: 'complex', label: '條件複雜 (客製)', desc: '產權複雜或格局極度特殊，需專業法務或特殊買方' }
+            ]
+          },
+          price: {
+            title: "維度五：價格狀況",
+            icon: <IconDollarSign className="w-6 h-6" />,
+            desc: "判斷屋主對行情的認知偏差程度",
+            options: [
+              { id: 'market', label: '市場價 (行情)', desc: '符合實價登錄，合理區間，成交阻力最小' },
+              { id: 'high', label: '尚可價 (略高)', desc: '略高於行情，預留議價空間，屬正常心態' },
+              { id: 'challenge', label: '挑戰價 (極高)', desc: '明顯高於行情，憑藉屋況或情感開價，需時間磨合' },
+              { id: 'urgent', label: '急售價 (低於行情)', desc: '低於行情，尋求快速成交，通常伴隨強烈動機' }
+            ]
+          },
+          contract: {
+            title: "特別加權：委託型態",
+            icon: <IconTarget className="w-6 h-6" />, 
+            desc: "決定案件的掌控權與成交的安全係數",
+            options: [
+              { id: 'general', label: '一般委託 (多窗)', desc: '競爭激烈，資訊混雜，無法掌控同業動態，成交不一定在自己手上' },
+              { id: 'exclusive', label: '專任委託 (單一)', desc: '單一窗口，屋主接收資訊單純，擁有完整議價權與佈局時間，成交機率極高' }
+            ]
+          }
+        };
+
+        // --- RadarChart (修改為直接接收 backend 算好的數值) ---
+        const RadarChart = ({ radarData }) => {
+            const dimensionKeys = Object.keys(DIMENSIONS);
+            const count = dimensionKeys.length;
+            const size = 240;
+            const center = size / 2;
+            const radius = 90;
+            const angleStep = (Math.PI * 2) / count;
+            const labels = ["性格", "動機", "屋主", "屋況", "價格", "委託"];
+
+            const points = radarData.map((val, i) => {
+                const normalized = val / 100;
+                const angle = i * angleStep - Math.PI / 2;
+                const r = normalized * radius;
+                const x = center + r * Math.cos(angle);
+                const y = center + r * Math.sin(angle);
+                return `${x},${y}`;
+            }).join(' ');
+
+            const levels = [20, 40, 60, 80, 100];
+            const gridPolygons = levels.map(level => {
+                return Array.from({ length: count }).map((_, i) => {
+                const angle = i * angleStep - Math.PI / 2;
+                const r = (level / 100) * radius;
+                const x = center + r * Math.cos(angle);
+                const y = center + r * Math.sin(angle);
+                return `${x},${y}`;
+                }).join(' ');
+            });
+
+            const labelCoords = Array.from({ length: count }).map((_, i) => {
+                const angle = i * angleStep - Math.PI / 2;
+                const r = radius + 25;
+                const x = center + r * Math.cos(angle);
+                const y = center + r * Math.sin(angle);
+                return { x, y, text: labels[i] };
+            });
+
+            return (
+                <div className="flex flex-col items-center">
+                <svg width={size + 80} height={size + 40} viewBox={`0 0 ${size + 80} ${size + 40}`}>
+                    <g transform="translate(40, 20)">
+                    {gridPolygons.map((pts, i) => (
+                        <polygon key={i} points={pts} fill={i === 4 ? "#f8fafc" : "none"} stroke="#cbd5e1" strokeWidth="1" strokeDasharray={i < 4 ? "4 4" : ""} />
+                    ))}
+                    {Array.from({ length: count }).map((_, i) => {
+                        const angle = i * angleStep - Math.PI / 2;
+                        const x = center + radius * Math.cos(angle);
+                        const y = center + radius * Math.sin(angle);
+                        return <line key={i} x1={center} y1={center} x2={x} y2={y} stroke="#e2e8f0" strokeWidth="1" />;
+                    })}
+                    <polygon points={points} fill="rgba(245, 158, 11, 0.5)" stroke="#d97706" strokeWidth="3" />
+                    {radarData.map((val, i) => {
+                        const normalized = val / 100;
+                        const angle = i * angleStep - Math.PI / 2;
+                        const r = normalized * radius;
+                        const x = center + r * Math.cos(angle);
+                        const y = center + r * Math.sin(angle);
+                        return <circle key={i} cx={x} cy={y} r="4" fill="#d97706" stroke="white" strokeWidth="2" />;
+                    })}
+                    {labelCoords.map((l, i) => (
+                        <text key={i} x={l.x} y={l.y} textAnchor="middle" dominantBaseline="middle" fontSize="12" fill="#475569" fontWeight="bold">
+                        {l.text}
+                        </text>
+                    ))}
+                    </g>
+                </svg>
+                <div className="text-xs text-slate-400 mt-[-10px]">面積越大 = 掌控度越高</div>
+                </div>
+            );
+        };
+
+        // --- Main Component ---
+        const { useState } = React;
+
+        function AgentAuthoritySystemRadar() {
+          const [currentStep, setCurrentStep] = useState(0);
+          const [selections, setSelections] = useState({
+            personality: '', motivation: '', ownerType: '', condition: '', price: '', contract: ''
+          });
+          const [showResult, setShowResult] = useState(false);
+          // 新增: 載入狀態與結果資料
+          const [isLoading, setIsLoading] = useState(false);
+          const [apiResult, setApiResult] = useState(null);
+
+          const dimensionKeys = Object.keys(DIMENSIONS);
+          const currentDimensionKey = dimensionKeys[currentStep];
+          const currentDimension = DIMENSIONS[currentDimensionKey];
+
+          const handleSelect = (value) => {
+            setSelections(prev => ({ ...prev, [currentDimensionKey]: value }));
+          };
+
+          // 修改: 呼叫後端 API
+          const handleNext = async () => {
+            if (currentStep < dimensionKeys.length - 1) {
+              setCurrentStep(prev => prev + 1);
+            } else {
+              // 最後一步，開始運算
+              setIsLoading(true);
+              try {
+                  const response = await fetch('/.netlify/functions/analyze', {
+                      method: 'POST',
+                      body: JSON.stringify(selections)
+                  });
+                  const data = await response.json();
+                  setApiResult(data);
+                  setShowResult(true);
+              } catch (error) {
+                  console.error("Error:", error);
+                  alert("運算發生錯誤，請稍後再試");
+              } finally {
+                  setIsLoading(false);
+              }
+            }
+          };
+
+          const handlePrev = () => {
+            if (currentStep > 0) {
+              setCurrentStep(prev => prev - 1);
+            }
+          };
+
+          const handleReset = () => {
+            setSelections({ personality: '', motivation: '', ownerType: '', condition: '', price: '', contract: '' });
+            setCurrentStep(0);
+            setShowResult(false);
+            setApiResult(null);
+          };
+
+          const getScoreColor = (s) => {
+            if (s >= 80) return "text-amber-500";
+            if (s >= 60) return "text-blue-600";
+            return "text-slate-500";
+          };
+
+          const getScoreComment = (s) => {
+            if (s >= 80) return "黃金A案 - 團隊必爭之地，全力衝刺！";
+            if (s >= 60) return "潛力B案 - 需透過經營與議價轉化為A案。";
+            return "磨練C案 - 考驗耐性與專業，放長線釣大魚。";
+          };
+
+          // 載入畫面
+          if (isLoading) {
+              return (
+                  <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                      <div className="text-center">
+                          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-amber-500 mx-auto mb-4"></div>
+                          <h2 className="text-xl font-bold text-slate-700">AI 核心運算中...</h2>
+                          <p className="text-slate-400">正在解析談判策略</p>
+                      </div>
+                  </div>
+              );
+          }
+
+          return (
+            <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-800">
+              <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
+                
+                <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-8 text-center">
+                  <h1 className="text-3xl md:text-4xl font-bold mb-2 tracking-wider">房仲開發權威系統</h1>
+                  <p className="text-slate-400 text-sm md:text-base">五維深度運算 ‧ 客觀評分 ‧ 局勢佈局</p>
+                </div>
+
+                {!showResult ? (
+                  <div className="p-6 md:p-12">
+                    {/* Progress Bar */}
+                    <div className="flex justify-between mb-2 px-1">
+                      <span className="text-xs font-bold text-slate-400">STEP {currentStep + 1}</span>
+                      <span className="text-xs font-bold text-slate-400">TOTAL {dimensionKeys.length}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-2 rounded-full mb-8 overflow-hidden">
+                      <div 
+                        className="bg-amber-500 h-full transition-all duration-500 ease-out"
+                        style={{ width: `${((currentStep + 1) / dimensionKeys.length) * 100}%` }}
+                      ></div>
+                    </div>
+
+                    {/* Question Section */}
+                    <div className="mb-10 min-h-[300px]">
+                      <div className="flex flex-col md:flex-row md:items-center mb-6 gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm flex-shrink-0">
+                          {currentDimension.icon}
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-slate-800">{currentDimension.title}</h2>
+                          <p className="text-slate-500 mt-1">{currentDimension.desc}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {currentDimension.options.map((option) => (
+                          <button
+                            key={option.id}
+                            onClick={() => handleSelect(option.id)}
+                            className={`relative p-5 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md ${
+                              selections[currentDimensionKey] === option.id
+                                ? 'border-amber-500 bg-amber-50 shadow-md'
+                                : 'border-slate-100 bg-white hover:border-amber-200'
+                            }`}
+                          >
+                            <div className="flex justify-between items-center mb-2">
+                              <span className={`font-bold text-lg ${selections[currentDimensionKey] === option.id ? 'text-amber-700' : 'text-slate-700'}`}>
+                                {option.label}
+                              </span>
+                              {selections[currentDimensionKey] === option.id && (
+                                <IconCheckCircle className="w-5 h-5 text-amber-500" />
+                              )}
+                            </div>
+                            <p className="text-slate-500 text-sm leading-relaxed">{option.desc}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Navigation */}
+                    <div className="flex justify-between pt-6 border-t border-slate-100">
+                      <button
+                        onClick={handlePrev}
+                        disabled={currentStep === 0}
+                        className={`flex items-center px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                          currentStep === 0 ? 'opacity-0 cursor-default' : 'text-slate-500 hover:bg-slate-100'
+                        }`}
+                      >
+                        <IconChevronLeft className="w-4 h-4 mr-1" /> 上一步
+                      </button>
+
+                      <button
+                        onClick={handleNext}
+                        disabled={!selections[currentDimensionKey]}
+                        className={`flex items-center px-8 py-3 rounded-lg font-bold text-base shadow-lg transition-all transform ${
+                          !selections[currentDimensionKey]
+                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+                            : 'bg-amber-500 text-white hover:bg-amber-600 hover:-translate-y-0.5 shadow-amber-500/30'
+                        }`}
+                      >
+                        {currentStep === dimensionKeys.length - 1 ? '開始運算分析' : '下一步'}
+                        <IconChevronRight className="ml-1 w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="animate-fade-in">
+                    {/* Top Bar */}
+                    <div className="bg-slate-50 border-b border-slate-200 p-4">
+                      <div className="flex flex-wrap justify-center gap-2 md:gap-4">
+                        {dimensionKeys.map(key => {
+                          const opt = DIMENSIONS[key].options.find(o => o.id === selections[key]);
+                          return (
+                            <div key={key} className="bg-white px-3 py-1.5 rounded border border-slate-200 shadow-sm flex flex-col items-center min-w-[100px]">
+                              <span className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">{DIMENSIONS[key].title.split('：')[1]}</span>
+                              <span className="text-sm font-bold text-slate-700">{opt?.label.split('(')[0]}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="p-6 md:p-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                      {/* Left Column */}
+                      <div className="lg:col-span-1 space-y-6">
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 text-center relative overflow-hidden pb-8">
+                          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-400 to-orange-500"></div>
+                          <div className="mt-4 mb-6">
+                            <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">綜合評分</h3>
+                            <div className={`text-6xl font-black ${getScoreColor(apiResult.score)}`}>
+                              {apiResult.score}
+                            </div>
+                            <p className="text-slate-600 font-bold text-sm mt-2 px-2">
+                              {getScoreComment(apiResult.score)}
+                            </p>
+                          </div>
+                          <div className="border-t border-slate-100 pt-6">
+                            <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">委託難易度雷達</h3>
+                            {/* 改用從後端拿回來的 radarData */}
+                            <RadarChart radarData={apiResult.radarData} />
+                          </div>
+                        </div>
+
+                        <div className="bg-blue-50 rounded-2xl p-6 border border-blue-100">
+                          <div className="flex items-center mb-3 text-blue-900 font-bold">
+                            <IconTarget className="w-5 h-5 mr-2" />
+                            專家觀點
+                          </div>
+                          <p className="text-blue-800 text-sm leading-relaxed text-justify">
+                            雷達圖面積越大，代表案件的阻力越小（條件越佳）；面積越小，代表需要越多專業介入。請參考右側策略進行佈局。
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right Column */}
+                      <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all">
+                          <div className="bg-slate-800 p-4 flex items-center text-white">
+                            <IconBrain className="w-5 h-5 mr-3 text-amber-400" />
+                            <h3 className="font-bold text-lg">屋主性格與深層心理攻防</h3>
+                          </div>
+                          <div className="p-6 md:p-8">
+                            <div className="whitespace-pre-wrap text-slate-700 leading-loose">
+                              {apiResult.analysis.psychology}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-white rounded-2xl border border-amber-200 overflow-hidden shadow-sm hover:shadow-md transition-all relative">
+                           <div className="absolute top-0 left-0 w-1 h-full bg-amber-400"></div>
+                           <div className="p-6 md:p-8">
+                            <h3 className="font-bold text-amber-700 mb-3 flex items-center">
+                              <IconActivity className="w-5 h-5 mr-2" />
+                              情緒破冰與接地氣策略
+                            </h3>
+                            <div className="whitespace-pre-wrap text-slate-700 leading-loose italic bg-amber-50/50 p-4 rounded-lg border border-amber-100">
+                              {apiResult.analysis.emotionTip}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all">
+                          <div className="bg-slate-800 p-4 flex items-center text-white">
+                            <IconUsers className="w-5 h-5 mr-3 text-blue-400" />
+                            <h3 className="font-bold text-lg">委託局勢與團隊合作策略</h3>
+                          </div>
+                          <div className="p-6 md:p-8">
+                            <div className="whitespace-pre-wrap text-slate-700 leading-loose">
+                              {apiResult.analysis.teamStrategy}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-center pb-10 mt-8">
+                      <button
+                        onClick={handleReset}
+                        className="flex items-center px-6 py-3 text-slate-600 bg-white border border-slate-200 hover:border-amber-500 hover:text-amber-600 rounded-full transition-all shadow-sm"
+                      >
+                        <IconRefreshCcw className="w-4 h-4 mr-2" />
+                        分析下一位潛在委託
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <style>{`
+                @keyframes fade-in {
+                  from { opacity: 0; transform: translateY(20px); }
+                  to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fade-in {
+                  animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+              `}</style>
+            </div>
+          );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<AgentAuthoritySystemRadar />);
+    </script>
+</body>
+</html>
