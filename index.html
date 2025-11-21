@@ -127,17 +127,22 @@
         // 3. Login Component (登入畫面)
         // ---------------------------------------------------------
         function Login({ onLogin }) {
-            const [email, setEmail] = useState('');
+            const [username, setUsername] = useState('');
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
 
             const handleLogin = async (e) => {
                 e.preventDefault();
+                // 技巧：自動幫帳號加上假的 Email 後綴，騙過 Firebase
+                // 這樣你在輸入時只要打 C73449 即可
+                const emailToUse = username.trim() + "@agent.system"; 
+
                 try {
-                    await auth.signInWithEmailAndPassword(email, password);
-                    // 登入成功，狀態會由 onAuthStateChanged 捕捉
+                    await auth.signInWithEmailAndPassword(emailToUse, password);
+                    // 登入成功
                 } catch (err) {
-                    setError("登入失敗：" + err.message);
+                    console.error(err);
+                    setError("登入失敗：帳號或密碼錯誤");
                 }
             };
 
@@ -147,14 +152,27 @@
                         <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">房仲開發權威系統</h2>
                         <form onSubmit={handleLogin} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700">Email</label>
-                                <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500" />
+                                <label className="block text-sm font-bold text-slate-700">帳號 (員工編號)</label>
+                                <input 
+                                    type="text" 
+                                    required 
+                                    value={username} 
+                                    onChange={(e) => setUsername(e.target.value.toUpperCase())} // 自動轉大寫，避免大小寫輸入錯誤
+                                    placeholder="例如：C73449"
+                                    className="mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 uppercase" 
+                                />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700">密碼</label>
-                                <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500" />
+                                <label className="block text-sm font-bold text-slate-700">密碼</label>
+                                <input 
+                                    type="password" 
+                                    required 
+                                    value={password} 
+                                    onChange={(e) => setPassword(e.target.value)} 
+                                    className="mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500" 
+                                />
                             </div>
-                            {error && <p className="text-red-500 text-sm">{error}</p>}
+                            {error && <p className="text-red-500 text-sm text-center font-bold">{error}</p>}
                             <button type="submit" className="w-full bg-amber-500 text-white p-3 rounded-lg font-bold hover:bg-amber-600 transition">登入系統</button>
                         </form>
                     </div>
@@ -562,5 +580,6 @@
 </body>
 
 </html>
+
 
 
