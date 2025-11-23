@@ -403,19 +403,22 @@ const Watermark = ({ text }) => {
         // 5. Main Logic Component (原有的分析邏輯 + 存檔功能)
         // ---------------------------------------------------------
         function AgentAuthoritySystemRadar({ user, onBack, initialData }) {
-          // 狀態管理：如果 initialData 存在(查看模式)，則直接顯示結果
           const isViewMode = !!initialData;
           
-          // 基本欄位 (Metadata)
           const [meta, setMeta] = useState({
               delegationName: initialData?.delegationName || '',
               delegationId: initialData?.delegationId || '',
               delegationLink: initialData?.delegationLink || ''
           });
 
-          // 分析選項
+          // ★★★ 初始值：personality 與 motivation 改為空陣列 [] (如果沒有 initialData)
           const [selections, setSelections] = useState(initialData?.selections || {
-            personality: '', motivation: '', ownerType: '', condition: '', price: '', contract: ''
+            personality: [], // 多選
+            motivation: [],  // 多選
+            ownerType: '', 
+            condition: '', 
+            price: '', 
+            contract: ''
           });
           
           const [currentStep, setCurrentStep] = useState(0);
@@ -428,20 +431,50 @@ const Watermark = ({ text }) => {
           const currentDimensionKey = dimensionKeys[currentStep];
           const currentDimension = DIMENSIONS[currentDimensionKey];
 
+          // ★★★ 判斷目前維度是否支援多選 (這裡設定前兩個維度支援)
+          const isMultiSelect = ['personality', 'motivation'].includes(currentDimensionKey);
+
           const handleMetaChange = (e) => {
               const { name, value } = e.target;
               setMeta(prev => ({ ...prev, [name]: value }));
           };
 
+          // ★★★ 修改選擇邏輯：支援多選切換與單選
           const handleSelect = (value) => {
-            setSelections(prev => ({ ...prev, [currentDimensionKey]: value }));
+            setSelections(prev => {
+                if (isMultiSelect) {
+                    // 多選邏輯：如果是陣列則操作，如果原本是字串(舊資料)則轉陣列
+                    const currentList = Array.isArray(prev[currentDimensionKey]) ? prev[currentDimensionKey] : [];
+                    if (currentList.includes(value)) {
+                        // 已存在 -> 移除
+                        return { ...prev, [currentDimensionKey]: currentList.filter(v => v !== value) };
+                    } else {
+                        // 不存在 -> 加入
+                        return { ...prev, [currentDimensionKey]: [...currentList, value] };
+                    }
+                } else {
+                    // 單選邏輯 (維持原樣)
+                    return { ...prev, [currentDimensionKey]: value };
+                }
+            });
+          };
+
+          // ★★★ 檢查「下一步」按鈕是否啟用
+          const isNextDisabled = () => {
+              const currentVal = selections[currentDimensionKey];
+              if (isMultiSelect) {
+                  // 多選：必須至少選一個
+                  return !currentVal || currentVal.length === 0;
+              } else {
+                  // 單選：必須有值
+                  return !currentVal;
+              }
           };
 
           const handleNext = async () => {
             if (currentStep < dimensionKeys.length - 1) {
               setCurrentStep(prev => prev + 1);
             } else {
-              // 呼叫後端 API
               setIsLoading(true);
               try {
                   const response = await fetch('/.netlify/functions/analyze', {
@@ -477,7 +510,7 @@ const Watermark = ({ text }) => {
                       createdAt: firebase.firestore.FieldValue.serverTimestamp()
                   });
                   alert("存檔成功！");
-                  onBack(); // 回到列表
+                  onBack();
               } catch (error) {
                   console.error(error);
                   alert("存檔失敗：" + error.message);
@@ -490,9 +523,19 @@ const Watermark = ({ text }) => {
             if (currentStep > 0) setCurrentStep(prev => prev - 1);
           };
 
+          // ★★★ 檢查選項是否被選中 (UI顯示用)
+          const isSelected = (optionId) => {
+              const val = selections[currentDimensionKey];
+              if (Array.isArray(val)) {
+                  return val.includes(optionId);
+              }
+              return val === optionId;
+          };
+
           const getScoreColor = (s) => s >= 80 ? "text-amber-500" : s >= 60 ? "text-blue-600" : "text-slate-500";
           const getScoreComment = (s) => s >= 80 ? "黃金A案 - 團隊必爭之地，全力衝刺！" : s >= 60 ? "潛力B案 - 需透過經營與議價轉化為A案。" : "磨練C案 - 考驗耐性與專業，放長線釣大魚。";
 
+          // --- 以下 UI 渲染部分與原本類似，但按鈕樣式需根據 isSelected 調整 ---
           if (isLoading) {
               return (
                   <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -506,12 +549,10 @@ const Watermark = ({ text }) => {
 
           return (
               <div className="min-h-screen bg-slate-50 flex flex-col relative">
-                    {/* 1. 插入浮水印 */}
                     <Watermark text={user.email} />
             <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-800">
               <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
                 
-                {/* Header */}
                 <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-6 flex justify-between items-center">
                   <div>
                     <h1 className="text-2xl md:text-3xl font-bold tracking-wider">房仲開發權威系統</h1>
@@ -525,96 +566,108 @@ const Watermark = ({ text }) => {
                 {!showResult ? (
                   <div className="p-6 md:p-12">
                     
-                    {/* 基本資料輸入區 (只在第一步顯示) */}
                     {currentStep === 0 && (
-                                        <div className="mb-8 bg-slate-50 p-6 rounded-xl border border-slate-200">
-                                            <h3 className="text-lg font-bold text-slate-700 mb-4 flex items-center"><IconList className="w-5 h-5 mr-2"/> 基本資料 (選填)</h3>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <div>
-                                                    <label className="block text-xs font-bold text-slate-500 mb-1">委託名稱 *</label>
-                                                    <input type="text" name="delegationName" value={meta.delegationName} onChange={handleMetaChange} placeholder="複製後台案名" className="w-full p-2 border rounded focus:border-amber-500 outline-none" />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-bold text-slate-500 mb-1">委託編號</label>
-                                                    <input type="text" name="delegationId" value={meta.delegationId} onChange={handleMetaChange} placeholder="例：AA12345678" className="w-full p-2 border rounded focus:border-amber-500 outline-none" />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-bold text-slate-500 mb-1">物件連結</label>
-                                                    <input type="text" name="delegationLink" value={meta.delegationLink} onChange={handleMetaChange} placeholder="http://..." className="w-full p-2 border rounded focus:border-amber-500 outline-none" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="flex justify-between mb-2 px-1">
-                                      <span className="text-xs font-bold text-slate-400">STEP {currentStep + 1}</span>
-                                      <span className="text-xs font-bold text-slate-400">TOTAL {dimensionKeys.length}</span>
-                                    </div>
-                                    <div className="w-full bg-slate-100 h-2 rounded-full mb-8 overflow-hidden">
-                                      <div className="bg-amber-500 h-full transition-all duration-500 ease-out" style={{ width: `${((currentStep + 1) / dimensionKeys.length) * 100}%` }}></div>
-                                    </div>
-
-                                    <div className="mb-10 min-h-[300px]">
-                                      <div className="flex flex-col md:flex-row md:items-center mb-6 gap-4">
-                                        <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm flex-shrink-0">
-                                          {currentDimension.icon}
-                                        </div>
-                                        <div>
-                                          <h2 className="text-2xl font-bold text-slate-800">{currentDimension.title}</h2>
-                                          <p className="text-slate-500 mt-1">{currentDimension.desc}</p>
-                                        </div>
-                                      </div>
-
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {currentDimension.options.map((option) => (
-                                          <button
-                                            key={option.id}
-                                            onClick={() => handleSelect(option.id)}
-                                            className={`relative p-5 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md ${
-                                              selections[currentDimensionKey] === option.id ? 'border-amber-500 bg-amber-50 shadow-md' : 'border-slate-100 bg-white hover:border-amber-200'
-                                            }`}
-                                          >
-                                            <div className="flex justify-between items-center mb-2">
-                                              <span className={`font-bold text-lg ${selections[currentDimensionKey] === option.id ? 'text-amber-700' : 'text-slate-700'}`}>{option.label}</span>
-                                              {selections[currentDimensionKey] === option.id && <IconCheckCircle className="w-5 h-5 text-amber-500" />}
-                                            </div>
-                                            <p className="text-slate-500 text-sm leading-relaxed">{option.desc}</p>
-                                          </button>
-                                        ))}
-                                      </div>
-                                    </div>
-
-                                    <div className="flex justify-between pt-6 border-t border-slate-100">
-                                      <button onClick={handlePrev} disabled={currentStep === 0} className={`flex items-center px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${currentStep === 0 ? 'opacity-0 cursor-default' : 'text-slate-500 hover:bg-slate-100'}`}>
-                                        <IconChevronLeft className="w-4 h-4 mr-1" /> 上一步
-                                      </button>
-                                      <button onClick={handleNext} disabled={!selections[currentDimensionKey]} className={`flex items-center px-8 py-3 rounded-lg font-bold text-base shadow-lg transition-all transform ${!selections[currentDimensionKey] ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' : 'bg-amber-500 text-white hover:bg-amber-600 hover:-translate-y-0.5 shadow-amber-500/30'}`}>
-                                        {currentStep === dimensionKeys.length - 1 ? '開始運算分析' : '下一步'} <IconChevronRight className="ml-1 w-5 h-5" />
-                                      </button>
-                                    </div>
-
+                        <div className="mb-8 bg-slate-50 p-6 rounded-xl border border-slate-200">
+                            <h3 className="text-lg font-bold text-slate-700 mb-4 flex items-center"><IconList className="w-5 h-5 mr-2"/> 基本資料 (選填)</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-1">委託名稱 *</label>
+                                    <input type="text" name="delegationName" value={meta.delegationName} onChange={handleMetaChange} placeholder="複製後台案名" className="w-full p-2 border rounded focus:border-amber-500 outline-none" />
                                 </div>
-                             ) : (
-                  <div className="animate-fade-in">
-                    {/* Result Top Bar */}
-                    <div className="bg-slate-50 border-b border-slate-200 p-4">
-                      <div className="flex flex-wrap justify-center gap-2 md:gap-4">
-                        {dimensionKeys.map(key => {
-                          const opt = DIMENSIONS[key].options.find(o => o.id === selections[key]);
-                          return (
-                            <div key={key} className="bg-white px-3 py-1.5 rounded border border-slate-200 shadow-sm flex flex-col items-center min-w-[100px]">
-                              <span className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">{DIMENSIONS[key].title.split('：')[1]}</span>
-                              <span className="text-sm font-bold text-slate-700">{opt?.label.split('(')[0]}</span>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-1">委託編號</label>
+                                    <input type="text" name="delegationId" value={meta.delegationId} onChange={handleMetaChange} placeholder="例：AA12345678" className="w-full p-2 border rounded focus:border-amber-500 outline-none" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-1">物件連結</label>
+                                    <input type="text" name="delegationLink" value={meta.delegationLink} onChange={handleMetaChange} placeholder="http://..." className="w-full p-2 border rounded focus:border-amber-500 outline-none" />
+                                </div>
                             </div>
+                        </div>
+                    )}
+
+                    <div className="flex justify-between mb-2 px-1">
+                      <span className="text-xs font-bold text-slate-400">STEP {currentStep + 1}</span>
+                      <span className="text-xs font-bold text-slate-400">TOTAL {dimensionKeys.length}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-2 rounded-full mb-8 overflow-hidden">
+                      <div className="bg-amber-500 h-full transition-all duration-500 ease-out" style={{ width: `${((currentStep + 1) / dimensionKeys.length) * 100}%` }}></div>
+                    </div>
+
+                    <div className="mb-10 min-h-[300px]">
+                      <div className="flex flex-col md:flex-row md:items-center mb-6 gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm flex-shrink-0">
+                          {currentDimension.icon}
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-slate-800">
+                              {currentDimension.title} 
+                              {isMultiSelect && <span className="ml-2 text-sm text-amber-600 bg-amber-100 px-2 py-1 rounded-full">可複選</span>}
+                          </h2>
+                          <p className="text-slate-500 mt-1">{currentDimension.desc}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {currentDimension.options.map((option) => {
+                          const active = isSelected(option.id);
+                          return (
+                              <button
+                                key={option.id}
+                                onClick={() => handleSelect(option.id)}
+                                className={`relative p-5 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md ${
+                                  active ? 'border-amber-500 bg-amber-50 shadow-md' : 'border-slate-100 bg-white hover:border-amber-200'
+                                }`}
+                              >
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className={`font-bold text-lg ${active ? 'text-amber-700' : 'text-slate-700'}`}>{option.label}</span>
+                                  {active && <IconCheckCircle className="w-5 h-5 text-amber-500" />}
+                                </div>
+                                <p className="text-slate-500 text-sm leading-relaxed">{option.desc}</p>
+                              </button>
                           );
                         })}
                       </div>
                     </div>
 
+                    <div className="flex justify-between pt-6 border-t border-slate-100">
+                      <button onClick={handlePrev} disabled={currentStep === 0} className={`flex items-center px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${currentStep === 0 ? 'opacity-0 cursor-default' : 'text-slate-500 hover:bg-slate-100'}`}>
+                        <IconChevronLeft className="w-4 h-4 mr-1" /> 上一步
+                      </button>
+                      <button onClick={handleNext} disabled={isNextDisabled()} className={`flex items-center px-8 py-3 rounded-lg font-bold text-base shadow-lg transition-all transform ${isNextDisabled() ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' : 'bg-amber-500 text-white hover:bg-amber-600 hover:-translate-y-0.5 shadow-amber-500/30'}`}>
+                        {currentStep === dimensionKeys.length - 1 ? '開始運算分析' : '下一步'} <IconChevronRight className="ml-1 w-5 h-5" />
+                      </button>
+                    </div>
+
+                </div>
+                ) : (
+                  // 結果顯示頁面 (微調標籤顯示)
+                  <div className="animate-fade-in">
+                    <div className="bg-slate-50 border-b border-slate-200 p-4">
+                      <div className="flex flex-wrap justify-center gap-2 md:gap-4">
+                        {dimensionKeys.map(key => {
+                          // 處理多選標籤顯示
+                          const val = selections[key];
+                          const valArray = Array.isArray(val) ? val : [val];
+                          
+                          // 如果選了太多，可以只顯示數量，或是全部列出，這裡選擇全部列出但縮小
+                          return valArray.map(v => {
+                              const opt = DIMENSIONS[key].options.find(o => o.id === v);
+                              if (!opt) return null;
+                              return (
+                                <div key={`${key}-${v}`} className="bg-white px-3 py-1.5 rounded border border-slate-200 shadow-sm flex flex-col items-center min-w-[100px]">
+                                  <span className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">{DIMENSIONS[key].title.split('：')[1]}</span>
+                                  <span className="text-sm font-bold text-slate-700">{opt.label.split('(')[0]}</span>
+                                </div>
+                              );
+                          });
+                        })}
+                      </div>
+                    </div>
+                    
+                    {/* 下方結果顯示區域維持原樣 (省略重複代碼，直接用原本的結構即可) */}
                     <div className="p-6 md:p-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
-                      {/* Left Column */}
                       <div className="lg:col-span-1 space-y-6">
-                        {/* 基本資料卡 */}
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
                              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">委託物件資訊</h4>
                              <h3 className="text-xl font-bold text-slate-800 mb-1">{meta.delegationName || "未命名物件"}</h3>
@@ -636,7 +689,7 @@ const Watermark = ({ text }) => {
                             <RadarChart radarData={apiResult.radarData} />
                           </div>
                         </div>
-                        {/* 存檔按鈕 (僅在新建模式或尚未存檔時顯示，這裡簡化為總是顯示，如果是查看模式可以隱藏) */}
+                        
                         {!isViewMode && (
                             <button onClick={handleSave} disabled={isSaving} className={`w-full py-3 rounded-xl font-bold text-white shadow-lg transition-all transform flex items-center justify-center ${isSaving ? 'bg-slate-400' : 'bg-green-600 hover:bg-green-700 hover:-translate-y-1'}`}>
                                 {isSaving ? '儲存中...' : <><IconSave className="w-5 h-5 mr-2" /> 儲存分析報告</>}
@@ -644,7 +697,6 @@ const Watermark = ({ text }) => {
                         )}
                       </div>
 
-                      {/* Right Column */}
                       <div className="lg:col-span-2 space-y-6">
                         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all">
                           <div className="bg-slate-800 p-4 flex items-center text-white">
@@ -662,16 +714,14 @@ const Watermark = ({ text }) => {
                         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all">
                           <div className="bg-slate-800 p-4 flex items-center text-white"><IconUsers className="w-5 h-5 mr-3 text-blue-400" /> <h3 className="font-bold text-lg">委託局勢與團隊合作策略</h3></div>
                           <div className="p-6 md:p-8"><div className="whitespace-pre-wrap text-slate-700 leading-loose">{apiResult.analysis.teamStrategy}</div></div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                </div>
-                             )}
-                         </div>
+                        </div>
+                      </div>
                     </div>
-
-                    {/* 2. 插入頁尾 */}
-                    <Footer />
+                  </div>
+                )}
+             </div>
+        </div>
+        <Footer />
                   <style>{`@keyframes fade-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } } .animate-fade-in { animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }`}</style>
                 </div>
              );
@@ -720,6 +770,7 @@ const Watermark = ({ text }) => {
 </body>
 
 </html>
+
 
 
 
