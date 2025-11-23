@@ -147,12 +147,18 @@ exports.handler = async function(event, context) {
         emotionTip += "💖 對應自住客：先談心情，再談事情。\n每次回報前，先關心他的生活。「李大姊，最近變天了，您身體還好嗎？」讓他感受到溫度。當他覺得你是「自己人」時，你回報的價格抗性（買方嫌貴），他才聽得進去，而不會覺得你在幫買方殺價。\n";
     }
     
-    // 補充性格應對
-    if (pList.includes('tiger')) emotionTip += "👉 對老虎：說話要簡潔有力，回報結果（有幾組、出多少），過程可以少講一點。\n";
-    if (pList.includes('owl')) emotionTip += "👉 對貓頭鷹：多用「客觀比較表」，讚美他的精明與做功課的用心。\n";
-    if (pList.includes('peacock')) emotionTip += "👉 對孔雀：多讚美房子或屋主的獨特性，跟他同仇敵愾。\n";
-    if (pList.includes('koala')) emotionTip += "👉 對無尾熊：多用安撫語氣，強調「安全」與「麻煩我來處理」，降低他的焦慮。\n";
-
+   if (pList.includes('tiger')) {
+        emotionTip += "⚡ 剋老虎 (以退為進)：\n老虎習慣下指令，你若唯唯諾諾他就看不起你。適時展現專業底線。\n用強勢的底氣贏得他的尊重。\n";
+    }
+    if (pList.includes('owl')) {
+        emotionTip += "🦉 剋貓頭鷹 (請教代替說服)：\n不要試圖辯贏他。把球踢回去。\n讓他自己去想理由，通常他想不出來就會妥協。\n";
+    }
+    if (pList.includes('peacock')) {
+        emotionTip += "🦚 剋孔雀 (惋惜代替讚美)：\n不要一直誇他，要用「遺憾」來包裝。\n讓他覺得你是知音，他會為了「不讓你為難」而願意配合調整價格。\n";
+    }
+    if (pList.includes('koala')) {
+        emotionTip += "🐨 剋無尾熊 (製造恐懼)：\n安撫無效時，必須讓他看到「不決定的後果」。\n用損失厭惡（Loss Aversion）逼他動起來。\n";
+    }
 
     // --- 3. 局勢研判與團隊策略 (Strategy) ---
     teamStrategy += "【局勢研判與操盤手建議】\n";
@@ -201,4 +207,5 @@ exports.handler = async function(event, context) {
     return { statusCode: 500, body: error.toString() };
   }
 };
+
 
