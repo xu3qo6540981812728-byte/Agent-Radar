@@ -9,66 +9,63 @@ exports.handler = async function(event, context) {
     const selections = JSON.parse(event.body);
 
     // ==========================================
-    // 1. 權重設定 (符合您的要求：價格=動機 > 屋況=性格 > 屋主 > 委託)
-    // 總分設計約為 100 分，根據重要性分配佔比
+    // 1. 權重設定 (嚴格遵照：價格=動機 > 屋況=性格 > 屋主 > 委託)
     // ==========================================
     const WEIGHTS = {
-      // 【Tier 1：決定成交的關鍵】(佔比約 50%)
-      // 價格 (Max 25)
+      // 【Tier 1：核心 (Max 25)】
       price: { 
-        urgent: 25,   // 急售價 (必殺)
-        market: 15,   // 行情價 (好談)
-        high: 5,      // 略高 (需磨)
-        challenge: 0  // 挑戰價 (卡關)
+        urgent: 25,   // 急售 (秒殺)
+        market: 20,   // 行情 (好跑)
+        high: 10,     // 略高 (需磨)
+        challenge: 0  // 挑戰 (卡關)
       },
-      // 動機 (Max 25)
       motivation: { 
-        cash: 25,     // 缺錢 (最急)
+        cash: 25,     // 缺錢 (極急)
         change: 20,   // 換屋 (剛需)
-        asset: 10,    // 閒置 (看心情)
-        test: 0       // 試探 (極難)
+        asset: 10,    // 閒置 (隨緣)
+        test: 0       // 試水溫 (困難)
       },
 
-      // 【Tier 2：影響談判難度的變數】(佔比約 30%)
-      // 性格 (Max 15) - 這裡的分數代表「好溝通程度」
-      personality: { 
-        koala: 15,    // 和平型 (配合度高)
-        peacock: 12,  // 社交型 (好說話)
-        owl: 8,       // 分析型 (毛很多)
-        tiger: 5      // 老虎型 (難掌控)
-      },
-      // 屋況 (Max 15)
+      // 【Tier 2：產品與溝通 (Max 15)】
       condition: { 
-        perfect: 15,  // A案 (免整理)
-        needsWork: 10,// B案 (小整理)
-        complex: 5,   // 特殊 (客製)
-        flaw: 0       // C案 (瑕疵)
+        perfect: 15,  // A案
+        needsWork: 12,// B案
+        complex: 8,   // 特殊
+        flaw: 5       // C案
+      },
+      personality: { 
+        koala: 15,    // 和平型 (好說話)
+        peacock: 15,  // 社交型 (好切入)
+        owl: 10,      // 分析型 (需數據)
+        tiger: 5      // 老虎型 (高壓)
       },
 
-      // 【Tier 3：輔助判斷】(佔比約 20%)
-      // 屋主種類 (Max 10)
+      // 【Tier 3：對象屬性 (Max 10)】
+      // 自住客(一般客)比投資客好談，因為有人情味，投資客只看利弊且海放委託
       ownerType: { 
-        investor: 10, // 投資客 (理性好談)
-        normal: 5     // 一般客 (感性不可控)
+        normal: 10,   // 自住客 (受服務感動)
+        investor: 5   // 投資客 (冷血/海放)
       },
-      // 委託型態 (Max 10) - 雖然重要，但對於「案件本身好壞」影響較小，主要影響掌控度
+
+      // 【Tier 4：合約型態 (Max 5)】
+      // 雖然重要，但依照您的指示，權重排在最後
       contract: { 
-        exclusive: 10, // 專任
-        general: 5     // 一般
+        exclusive: 5,  // 專任
+        general: 2     // 一般
       }
     };
 
-    // 雷達圖數值 (視覺呈現用，保持原本比例即可)
+    // 雷達圖數值 (視覺呈現，保持高對比)
     const RADAR_VALUES = {
-      personality: { tiger: 60, owl: 40, peacock: 70, koala: 90 },
-      motivation: { change: 80, cash: 100, asset: 50, test: 20 },
-      ownerType: { normal: 80, investor: 40 },
-      condition: { perfect: 100, needsWork: 75, complex: 40, flaw: 30 },
-      price: { urgent: 100, market: 80, high: 50, challenge: 20 },
-      contract: { exclusive: 100, general: 40 }
+      personality: { tiger: 60, owl: 50, peacock: 70, koala: 90 },
+      motivation: { change: 80, cash: 100, asset: 60, test: 30 },
+      ownerType: { normal: 90, investor: 40 }, // 自住客分數高(好掌控)，投資客分數低
+      condition: { perfect: 100, needsWork: 80, complex: 50, flaw: 40 },
+      price: { urgent: 100, market: 90, high: 60, challenge: 20 },
+      contract: { exclusive: 100, general: 50 }
     };
 
-    // --- 輔助函數：處理多選分數 (取平均) ---
+    // --- 輔助函數 ---
     const getScore = (category, value) => {
         if (!value) return 0;
         const map = WEIGHTS[category];
@@ -100,104 +97,97 @@ exports.handler = async function(event, context) {
     const radarData = dimensionOrder.map(key => Math.round(getRadarValue(key, selections[key])));
 
     // ==========================================
-    // 2. 文案生成邏輯 (深度解析版)
+    // 文案生成邏輯
     // ==========================================
     
     const ensureArray = (val) => Array.isArray(val) ? val : [val];
-    const pList = ensureArray(selections.personality); // 性格
-    const mList = ensureArray(selections.motivation);  // 動機
+    const pList = ensureArray(selections.personality); 
+    const mList = ensureArray(selections.motivation);  
     const { ownerType, condition, price, contract } = selections;
 
     let psychology = "";
     let emotionTip = "";
     let teamStrategy = "";
 
-    // --- (1) 心理攻防與談判劇本 (針對多重性格) ---
+    // --- 1. 屋主深層心理側寫 (Psychology) ---
+    psychology += "【深層心理與決策模式】\n";
+    
+    // 針對投資客 vs 自住客的心理差異 (依據您的實務觀察調整)
+    if (ownerType === 'investor') {
+        psychology += "➤ 屋主屬性：投資客 (利益導向)\n此類屋主通常將案件「海放」給多家仲介，對房仲的忠誠度極低。他的心理只有「數字」與「效率」。切記：他不在乎你多辛苦，只在乎你帶回什麼價格。任何的情感勒索（如：我幫您顧房子很累）對他無效，甚至會被視為不專業。\n\n";
+    } else {
+        psychology += "➤ 屋主屬性：自住客 (情感導向)\n此類屋主對房子有深厚情感，且往往只有這一間資產。他的決策容易受「感受」影響。你的「勤奮回報」與「貼心服務」是能夠打動他的。只要讓他信任你這個人，價格往往比較好談。\n\n";
+    }
+
     if (pList.length > 0) {
-        psychology += "【屋主深層心理側寫】\n";
-        
-        // 判斷是否為「矛盾組合」(例如老虎+無尾熊，既強勢又優柔寡斷)
-        const hasDominant = pList.includes('tiger');
-        const hasSoft = pList.includes('koala') || pList.includes('peacock');
-        const hasAnalytical = pList.includes('owl');
-
-        if (hasDominant && hasSoft) {
-            psychology += "⚠️ 注意：此屋主具備「雙重面具」。表面上可能強勢主導(老虎)，但內心其實充滿不安全感(無尾熊/孔雀)。他在談判桌上會先聲奪人，但只要你撐過第一波攻勢，並在私下給予足夠的安全感，他的防線會瞬間瓦解。千萬別被他的大嗓門嚇退。\n\n";
-        } else if (hasDominant && hasAnalytical) {
-             psychology += "⚠️ 注意：這是最難纏的「精明管理者」組合。他既要掌控權(老虎)，又要摳細節(貓頭鷹)。你不能只給感覺，必須給數據；你不能只給數據，必須給出結論讓他做決定。對付他只有一招：比他更專業、比他更有效率。\n\n";
-        }
-
+        psychology += "➤ 性格特質分析：\n";
         pList.forEach(p => {
             if (p === 'tiger') {
-                psychology += "➤ 針對「老虎特質」(掌控型)：\n他沒耐心聽過程，只看結果。如果回報時你講「我今天帶看了三組，客人說...」，他會覺得你廢話太多。直接說：「本週帶看三組，一組有出價意願，但我擋下來了，因為價格不到位。」——這才是他要聽的「戰功」。要讓他覺得你是他手上的「利劍」，而不是需要他操心的「負擔」。\n";
+                psychology += "• 老虎型 (掌控)：缺乏耐心，憤怒源於「失控」。開發端需展現「解決問題的能力」，讓他覺得交給你最省事。\n";
             }
             if (p === 'owl') {
-                psychology += "➤ 針對「貓頭鷹特質」(分析型)：\n這類人天生懷疑論。你講「行情」他覺得你在匡他，你講「誠意」他覺得不值錢。攻破他的唯一武器是「比較表」。做一張精美的周邊競品分析，列出優缺點，用客觀數據告訴他：「不是我要砍你價，是市場數據顯示目前的開價會讓買方卻步。」讓他自己得出「該降價」的結論。\n";
+                psychology += "• 貓頭鷹 (避險)：猶豫源於「資訊不足」。不要催他，要提供足夠的市場數據讓他自己說服自己。\n";
             }
             if (p === 'peacock') {
-                psychology += "➤ 針對「孔雀特質」(社交型)：\n這房子是他的「面子」。千萬不能批評屋況（嫌棄就是打他臉）。用詞要轉換：舊裝潢要說是「復古風」，格局怪要說是「有特色」。議價時要用「捧」的：「大哥，買方真的很喜歡您的品味，但他預算真的有限，能不能當作是交個朋友，成全這對年輕夫妻？」\n";
+                psychology += "• 孔雀型 (面子)：堅持源於「自尊」。千萬別批評屋況，要讓他覺得賣掉這間房子是一件很有面子的事。\n";
             }
             if (p === 'koala') {
-                psychology += "➤ 針對「無尾熊特質」(和平型)：\n他的死穴是「怕做錯決定」。他這秒答應你，下一秒家人講一句話就反悔。所以你不能只是仲介，要是「家人」。所有的決定要幫他背書：「王大姐您放心，這合約我幫您把關過了，絕對安全。」必要時，你要主動提議去向他的家人做說明，幫他擋子彈。\n";
+                psychology += "• 無尾熊 (依賴)：反覆源於「恐懼」。他需要一個強勢的依靠，你要幫他擋住來自家人的壓力。\n";
             }
         });
     }
 
-    // --- (2) 接地氣破冰與情緒策略 ---
-    emotionTip += "【江湖一點訣：破冰與信任】\n";
-    if (pList.includes('tiger')) {
-        emotionTip += "👉 對老虎：適度「示弱」是高招。在他發威完後，淡淡講一句「李大哥，其實我這麼拚也是想幫您處理好，不然我壓力也很大」，這種強者對強者的示弱，反而能贏得他的義氣。\n";
-    }
-    if (pList.includes('owl')) {
-        emotionTip += "👉 對貓頭鷹：展現「同路人」姿態。問他：「您這資料整理得比我還專業，是用什麼軟體弄的？」滿足他的智力優越感，他會把你從「推銷員」升級為「可以對話的人」。\n";
-    }
-    if (pList.includes('peacock')) {
-        emotionTip += "👉 對孔雀：見人說人話。陪他聊當年勇、聊裝潢理念。重點不在內容，在於你眼神要有光，要讓他覺得「終於有人懂這房子的價值了」。\n";
-    }
-    if (pList.includes('koala')) {
-        emotionTip += "👉 對無尾熊：多聊「家常」。別急著談公事，先問小孩、問長輩。建立「我們是自己人」的感覺，關鍵時刻他才不會躲你電話。\n";
-    }
-
-    // --- (3) 局勢研判與團隊策略 (核心：動機+價格) ---
-    // 判斷案件等級
-    let strategyTitle = "";
-    let strategyContent = "";
+    // --- 2. 情緒破冰與溝通 (Emotion) ---
+    emotionTip += "【溝通破冰與情緒策略】\n";
     
-    // 定義關鍵變數
-    const isUrgent = mList.includes('cash') || mList.includes('change') || price === 'urgent';
-    const isHighPrice = price === 'challenge' || price === 'high';
-    const isExclusive = contract === 'exclusive';
-
-    teamStrategy += "【局勢總結與操盤手建議】\n";
-
-    if (score >= 80) {
-        strategyTitle = "🔥 絕對A案：團隊必爭之地";
-        strategyContent = "這案子基本上「閉著眼睛都會賣」。\n• 給開發：你的重點不是賣掉，而是「賣給誰」以及「能不能守住價格」。因為條件太好，買方會蜂擁而至，你要利用這個勢頭，製造「競價」氛圍，讓買方加價。\n• 團隊引導：直接在群組喊話「秒殺件，手慢無」，激發同事的狼性。";
-    } else if (score >= 60) {
-        strategyTitle = "✨ 潛力B案：需技術性加工";
-        strategyContent = "這案子體質不錯，但差臨門一腳（可能是價格略高或屋況需整理）。\n• 給開發：現在是「信心戰」。屋主還在猶豫，買方也在觀望。你需要做的是「縮短認知差距」。如果是價格問題，每週固定回報兩次看屋反饋（嫌貴的聲音），用市場教屋主。\n• 團隊引導：告訴同事「屋主心態在鬆動了」，請大家集中火力帶看，創造人氣來壓迫屋主降價。";
+    // 針對投資客與自住客給予完全不同的建議
+    if (ownerType === 'investor') {
+        emotionTip += "🛑 對應投資客：少談感情，多談行情。\n不用跟他聊家常，他也不想聽。直接講重點：「張大哥，這週我有兩組誠意買方，出價大約在XX萬，我知道這離您目標有段距離，但考慮到最近XX區的庫存量增加...」—用市場流動性風險來壓迫他。\n";
     } else {
-        strategyTitle = "❄️ 磨練C案：長期抗戰";
-        strategyContent = "這是一場硬仗。可能價格飛天，或者屋況極差。\n• 給開發：切記「不期不待，沒有傷害」。不要花太多時間在這個案子上，把它當作「庫存」和「廣告板」。偶爾關心一下即可，等待屋主自己痛過（賣不掉）之後，再來談降價。\n• 團隊引導：坦白跟同事說「這間屋主還在作夢」，但可以當作「帶看其他的墊腳石」，用這間的缺點來襯托其他A案的優點。";
+        emotionTip += "💖 對應自住客：先談心情，再談事情。\n每次回報前，先關心他的生活。「李大姊，最近變天了，您身體還好嗎？」讓他感受到溫度。當他覺得你是「自己人」時，你回報的價格抗性（買方嫌貴），他才聽得進去，而不會覺得你在幫買方殺價。\n";
     }
+    
+    // 補充性格應對
+    if (pList.includes('tiger')) emotionTip += "👉 對老虎：說話要簡潔有力，回報結果（有幾組、出多少），不要講過程。\n";
+    if (pList.includes('owl')) emotionTip += "👉 對貓頭鷹：多用「客觀比較表」，讚美他的精明與做功課的用心。\n";
+    if (pList.includes('peacock')) emotionTip += "👉 對孔雀：多讚美房子的獨特性，跟他同仇敵愾罵那些不懂貨的買方。\n";
+    if (pList.includes('koala')) emotionTip += "👉 對無尾熊：多用安撫語氣，強調「安全」與「麻煩我來處理」，降低他的焦慮。\n";
 
-    teamStrategy += strategyTitle + "\n" + strategyContent + "\n\n";
 
-    // 針對動機的特別補充
-    if (isUrgent) {
-        teamStrategy += "⚡ 關於動機：\n屋主現在是「熱鍋上的螞蟻」。這是你最大的籌碼！只要買方出價達到「止血點」，屋主就會放。請務必抓緊速度，不要讓屋主冷靜下來思考。\n";
-    } else if (mList.includes('test') || mList.includes('asset')) {
-        teamStrategy += "🐢 關於動機：\n屋主是「姜太公釣魚」，願者上鉤。這時候千萬別逼他，逼急了他就不賣了。要用「服務」感化他，讓他習慣有你這個人，等哪天他真的想賣時，第一個想到你。\n";
-    }
+    // --- 3. 局勢研判與團隊策略 (Strategy) ---
+    teamStrategy += "【局勢研判與操盤手建議】\n";
+    
+    let statusText = score >= 80 ? "甜蜜成交區 (把握熱度)" : (score >= 50 ? "認知磨合區 (需拉扯)" : "深水區 (需長期抗戰)");
+    teamStrategy += `➤ 當前局勢：${statusText} (總分 ${score})\n\n`;
 
-    // 針對合約的特別補充
-    if (isExclusive) {
-        teamStrategy += "🔒 關於委託：\n拿到專任就是拿到「發球權」。不用急著亂槍打鳥，你可以篩選客人，甚至可以大膽要求屋主做清潔、補油漆，因為這些投資回報都是你的。";
+    // 團隊分工 (強調開發與銷售)
+    teamStrategy += "🎯 團隊分工戰略：\n";
+    if (contract === 'exclusive') {
+        teamStrategy += "• 專任委託：開發端擁有發球權。雖然是專任，但要「假裝」很開放，鼓勵全店帶看，製造熱絡假象。開發負責扮黑臉守價，讓銷售去衝買方出價。\n";
     } else {
-        teamStrategy += "⚠️ 關於委託：\n一般約就是「速度戰」。不要藏私！有狀況立刻回報全店，寧可讓同事成交，也不要被外面的同業截胡。資訊流通越快，成交機率越高。";
+        teamStrategy += "• 一般委託：典型的速度戰。投資客海放案件或一般約，資訊極易外洩。開發端務必第一時間通報全店，有單就收，不要想著獨泡。成交才是王道。\n";
     }
 
-    // 回傳結果
+    teamStrategy += "\n⚔️ 針對性操作建議：\n";
+    
+    // 價格策略
+    if (price === 'challenge' || price === 'high') {
+        teamStrategy += "• 價格過高：這是最大阻礙。開發端需執行「高頻率回報」。不要怕回報壞消息（嫌貴、地點差），這是在幫屋主「打預防針」。利用大量帶看紀錄（量）來證明價格（價）的不合理。\n";
+    } else {
+        teamStrategy += "• 價格合理：開發端需過濾買方，鎖定精準客群。協助銷售端營造「多組競爭」氛圍，促使買方快速決定。\n";
+    }
+
+    // 動機策略
+    if (mList.includes('change')) {
+        teamStrategy += "• 換屋動機：緊盯他的「時間軸」。如果他新房子交屋在即，那資金壓力就是你的籌碼。如果還沒買，則強調「現金為王」的優勢。\n";
+    }
+    if (mList.includes('cash')) {
+        teamStrategy += "• 資金缺口：這類案件要「快」。屋主耐心有限，若拖太久他可能會尋求其他高利管道或乾脆不賣。所有回報都要強調「速度」與「確定性」。\n";
+    }
+    if (ownerType === 'investor' && (mList.includes('asset') || mList.includes('test'))) {
+        teamStrategy += "• 投資客試水溫：這是最難搞的組合。建議採取「冷處理」或「放置play」。偶爾傳個實登行情給他即可，不用花太多心力經營，等市場教訓他。\n";
+    }
+
     return {
       statusCode: 200,
       body: JSON.stringify({
