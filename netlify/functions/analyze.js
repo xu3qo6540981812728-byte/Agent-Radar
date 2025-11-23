@@ -114,7 +114,7 @@ exports.handler = async function(event, context) {
     
     // 針對投資客 vs 自住客的心理差異 (依據您的實務觀察調整)
     if (ownerType === 'investor') {
-        psychology += "➤ 屋主屬性：投資客 (利益導向)\n此類屋主通常將案件「海放」給多家仲介，對房仲的忠誠度極低。他的心理只有「數字」與「效率」。切記：他不在乎你多辛苦，只在乎你帶回什麼價格。任何的情感勒索（如：我幫您顧房子很累）對他無效，甚至會被視為不專業。\n\n";
+        psychology += "➤ 屋主屬性：投資客 (利益導向)\n此類屋主通常將案件「海放」給多家仲介，對房仲的忠誠度極低。他的心理只有「數字」與「效率」。切記：他不在乎你多辛苦，只在乎你帶回什麼價格。任何的情感勒索（如：我幫您照顧好房子）對他無效，甚至會被視為不專業。\n\n";
     } else {
         psychology += "➤ 屋主屬性：自住客 (情感導向)\n此類屋主對房子有深厚情感，且往往只有這一間資產。他的決策容易受「感受」影響。你的「勤奮回報」與「貼心服務」是能夠打動他的。只要讓他信任你這個人，價格往往比較好談。\n\n";
     }
@@ -148,9 +148,9 @@ exports.handler = async function(event, context) {
     }
     
     // 補充性格應對
-    if (pList.includes('tiger')) emotionTip += "👉 對老虎：說話要簡潔有力，回報結果（有幾組、出多少），不要講過程。\n";
+    if (pList.includes('tiger')) emotionTip += "👉 對老虎：說話要簡潔有力，回報結果（有幾組、出多少），過程可以少講一點。\n";
     if (pList.includes('owl')) emotionTip += "👉 對貓頭鷹：多用「客觀比較表」，讚美他的精明與做功課的用心。\n";
-    if (pList.includes('peacock')) emotionTip += "👉 對孔雀：多讚美房子的獨特性，跟他同仇敵愾罵那些不懂貨的買方。\n";
+    if (pList.includes('peacock')) emotionTip += "👉 對孔雀：多讚美房子或屋主的獨特性，跟他同仇敵愾。\n";
     if (pList.includes('koala')) emotionTip += "👉 對無尾熊：多用安撫語氣，強調「安全」與「麻煩我來處理」，降低他的焦慮。\n";
 
 
@@ -163,9 +163,9 @@ exports.handler = async function(event, context) {
     // 團隊分工 (強調開發與銷售)
     teamStrategy += "🎯 團隊分工戰略：\n";
     if (contract === 'exclusive') {
-        teamStrategy += "• 專任委託：開發端擁有發球權。雖然是專任，但要「假裝」很開放，鼓勵全店帶看，製造熱絡假象。開發負責扮黑臉守價，讓銷售去衝買方出價。\n";
+        teamStrategy += "• 專任委託：開發端擁有發球權。專任就是王道，鼓勵大家放心介紹，讓銷售好好去衝買方出價。\n";
     } else {
-        teamStrategy += "• 一般委託：典型的速度戰。投資客海放案件或一般約，資訊極易外洩。開發端務必第一時間通報全店，有單就收，不要想著獨泡。成交才是王道。\n";
+        teamStrategy += "• 一般委託：典型的速度戰。投資客海放案件或一般約，資訊極易外洩。開發務必掌握好屋主並旁敲側擊同業的資訊，成交才是王道。\n";
     }
 
     teamStrategy += "\n⚔️ 針對性操作建議：\n";
@@ -174,7 +174,7 @@ exports.handler = async function(event, context) {
     if (price === 'challenge' || price === 'high') {
         teamStrategy += "• 價格過高：這是最大阻礙。開發端需執行「高頻率回報」。不要怕回報壞消息（嫌貴、地點差），這是在幫屋主「打預防針」。利用大量帶看紀錄（量）來證明價格（價）的不合理。\n";
     } else {
-        teamStrategy += "• 價格合理：開發端需過濾買方，鎖定精準客群。協助銷售端營造「多組競爭」氛圍，促使買方快速決定。\n";
+        teamStrategy += "• 價格合理：協助銷售端營造「多組競爭」氛圍，促使買方快速決定。\n";
     }
 
     // 動機策略
@@ -185,7 +185,7 @@ exports.handler = async function(event, context) {
         teamStrategy += "• 資金缺口：這類案件要「快」。屋主耐心有限，若拖太久他可能會尋求其他高利管道或乾脆不賣。所有回報都要強調「速度」與「確定性」。\n";
     }
     if (ownerType === 'investor' && (mList.includes('asset') || mList.includes('test'))) {
-        teamStrategy += "• 投資客試水溫：這是最難搞的組合。建議採取「冷處理」或「放置play」。偶爾傳個實登行情給他即可，不用花太多心力經營，等市場教訓他。\n";
+        teamStrategy += "• 投資客試水溫：這是最難搞的組合。建議採取「冷處理」或「放置play」。偶爾傳個實登行情給他即可，讓市場告訴他。\n";
     }
 
     return {
@@ -201,3 +201,4 @@ exports.handler = async function(event, context) {
     return { statusCode: 500, body: error.toString() };
   }
 };
+
